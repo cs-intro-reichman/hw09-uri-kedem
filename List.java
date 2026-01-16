@@ -29,6 +29,9 @@ public class List {
 
     /** Returns the CharData of the first element in this list. */
     public CharData getFirst() {
+        if (first == null) {
+            return null;
+        }
         return first.cp;
     }
 
@@ -124,7 +127,14 @@ public class List {
      * throws an IndexOutOfBoundsException.
      */
     public CharData get(int index) {
-        return listIterator(index).current.cp;
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException();
+        }
+        Node n = first;
+        for (int i = 0; i < index; i++) {
+            n = n.next;
+        }
+        return n.cp;
     }
 
     /**
@@ -149,7 +159,7 @@ public class List {
     public ListIterator listIterator(int index) {
         // If the list is empty, there is nothing to iterate
         if (size == 0)
-            return null;
+            return new ListIterator(null);
         // Gets the element in position index of this list
         Node current = first;
         int i = 0;
