@@ -14,7 +14,7 @@ public class LanguageModel {
     private Random randomGenerator;
 
     /**
-     * Constructs a language model with the given window length and a given
+     * Costructs a language model with the given window length and a given
      * seed value. Generating texts from this model multiple times with the
      * same seed value will produce the same random texts. Good for debugging.
      */
