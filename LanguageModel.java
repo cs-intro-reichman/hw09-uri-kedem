@@ -100,7 +100,7 @@ public class LanguageModel {
     }
 
     /**
-     * random comment
+     * 
      * Generates a random text, based on the probabilities that were learned during
      * training.
      * 
