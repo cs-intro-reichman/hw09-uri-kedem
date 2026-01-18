@@ -130,7 +130,7 @@ public class LanguageModel {
             generatedText += nextChar;
             window = generatedText.substring(generatedText.length() - windowLength);
         }
-        return generatedText;
+        return generatedText + "!!!I_AM_HERE!!!";
     }
 
     /** Returns a string representing the map of this language model. */
