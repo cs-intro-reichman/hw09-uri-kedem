@@ -39,27 +39,37 @@ public class LanguageModel {
 
     /** Builds a language model from the text in the given file (the corpus). */
     public void train(String fileName) {
+        String text = "";
         In in = new In(fileName);
-        String window = "";
-        char c;
-
-        for (int i = 0; i < windowLength; i++) {
-            if (!in.isEmpty()) {
-                window += in.readChar();
-            }
+        // Read the whole file into a single string
+        if (!in.isEmpty()) {
+            text = in.readAll();
         }
 
-        while (!in.isEmpty()) {
-            c = in.readChar();
+        // Cyclic Training: Loop through the text
+        for (int i = 0; i < text.length(); i++) {
+            // 1. Get the current window
+            String window = "";
+            for (int j = 0; j < windowLength; j++) {
+                // Use modulo (%) to wrap around to the start if we go past the end
+                int charIndex = (i + j) % text.length();
+                window += text.charAt(charIndex);
+            }
+
+            // 2. Get the next character (the target)
+            int nextCharIndex = (i + windowLength) % text.length();
+            char c = text.charAt(nextCharIndex);
+
+            // 3. Update the map
             List probs = CharDataMap.get(window);
             if (probs == null) {
                 probs = new List();
                 CharDataMap.put(window, probs);
             }
             probs.update(c);
-            window = window.substring(1) + c;
         }
 
+        // Calculate probabilities for all lists
         for (List probs : CharDataMap.values()) {
             calculateProbabilities(probs);
         }
@@ -130,7 +140,7 @@ public class LanguageModel {
             generatedText += nextChar;
             window = generatedText.substring(generatedText.length() - windowLength);
         }
-        return generatedText + "!!!I_AM_HERE!!!";
+        return generatedText;
     }
 
     /** Returns a string representing the map of this language model. */
