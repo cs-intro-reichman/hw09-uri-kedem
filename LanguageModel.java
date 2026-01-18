@@ -37,15 +37,17 @@ public class LanguageModel {
 
     /** Builds a language model from the text in the given file (the corpus). */
     public void train(String fileName) {
-        String window = "";
-        char c;
-        In in = new In(fileName);
-
-        // SAFE LINEAR TRAINING
+        // STRICT LINEAR TRAINING
         // using readAll() prevents skipped characters and keeps strict linear logic
         // required by the "Train" tests.
+        In in = new In(fileName);
+        String window = "";
+        char c;
+
+        // Read entire file to avoid readChar boundary issues
         String text = in.readAll();
 
+        // Iterate exactly as far as we can slide the window
         for (int i = 0; i < text.length() - windowLength; i++) {
             window = text.substring(i, i + windowLength);
             c = text.charAt(i + windowLength);
@@ -111,22 +113,23 @@ public class LanguageModel {
         String window = initialText.substring(initialText.length() - windowLength);
         String generatedText = initialText;
 
+        // Loop until we reach the exact requested length
         while (generatedText.length() < textLength) {
             List probs = CharDataMap.get(window);
 
-            // FALLBACK: If we hit a dead end (probs is null), restart from a safe key.
+            // "SURVIVAL MODE" - The Critical Fix
             if (probs == null) {
-                // Reset to initial text
+                // 1. Try to reset to the initial text (often a safe anchor)
                 window = initialText.substring(initialText.length() - windowLength);
                 probs = CharDataMap.get(window);
 
-                // If that fails, just grab the very first key available in the map
-                // We use a simple loop to avoid complex Iterator imports
+                // 2. If even that fails, grab the first available key in the map.
+                // This ensures we NEVER return null and NEVER stop early.
                 if (probs == null) {
-                    for (String key : CharDataMap.keySet()) {
-                        window = key;
-                        break; // Grab first one and stop
-                    }
+                    // Convert keySet to array to get the first element without needing Iterator
+                    // imports
+                    Object[] keys = CharDataMap.keySet().toArray();
+                    window = (String) keys[0];
                     probs = CharDataMap.get(window);
                 }
             }
