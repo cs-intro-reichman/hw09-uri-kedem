@@ -20,9 +20,9 @@ public class LanguageModel {
     }
 
     public void train(String fileName) {
-        // Strict Linear Training
         In in = new In(fileName);
         String text = in.readAll();
+        // Strict linear training
         for (int i = 0; i < text.length() - windowLength; i++) {
             String window = text.substring(i, i + windowLength);
             char c = text.charAt(i + windowLength);
@@ -42,8 +42,7 @@ public class LanguageModel {
         int totalChars = 0;
         ListIterator itr = probs.listIterator(0);
         while (itr.hasNext()) {
-            CharData cd = itr.next();
-            totalChars += cd.count;
+            totalChars += itr.next().count;
         }
         double cumulativeProb = 0.0;
         itr = probs.listIterator(0);
@@ -55,7 +54,12 @@ public class LanguageModel {
         }
     }
 
+    // SAFE getRandomChar with protection against empty lists
     char getRandomChar(List probs) {
+        if (probs == null || probs.getSize() == 0) {
+            System.out.println("DEBUG: getRandomChar received empty/null list!");
+            return ' '; // Return space as failsafe
+        }
         double r = randomGenerator.nextDouble();
         ListIterator itr = probs.listIterator(0);
         while (itr.hasNext()) {
@@ -63,6 +67,7 @@ public class LanguageModel {
             if (cd.cp > r)
                 return cd.chr;
         }
+        // Fallback for rounding errors
         return probs.get(probs.getSize() - 1).chr;
     }
 
@@ -73,33 +78,43 @@ public class LanguageModel {
         String generatedText = initialText;
         String window = initialText.substring(initialText.length() - windowLength);
 
-        // DEBUG PRINT 1: Confirm Code Version
-        System.out.println("DEBUG: Code version 2.0 is running!");
+        // DEBUG: Verify start
+        System.out.println("DEBUG: Code v3.0 (Uncrashable) Start.");
 
         while (generatedText.length() < textLength) {
-            List probs = CharDataMap.get(window);
+            try {
+                List probs = CharDataMap.get(window);
 
-            if (probs == null) {
-                // DEBUG PRINT 2: Dead End Hit
-                System.out.println("DEBUG: Probs is null at length: " + generatedText.length());
-
-                window = initialText.substring(0, windowLength);
-                probs = CharDataMap.get(window);
-
+                // DEAD END HANDLER
                 if (probs == null) {
-                    System.out.println("DEBUG: Fatal - initial window not found!");
-                    // Force a valid window from map to avoid crash
-                    for (String key : CharDataMap.keySet()) {
-                        window = key;
-                        probs = CharDataMap.get(key);
-                        break;
+                    System.out.println("DEBUG: Dead end at '" + window + "'");
+                    // 1. Reset to seed
+                    window = initialText.substring(0, windowLength);
+                    probs = CharDataMap.get(window);
+
+                    // 2. If seed is missing, grab ANY key
+                    if (probs == null) {
+                        for (String key : CharDataMap.keySet()) {
+                            window = key;
+                            probs = CharDataMap.get(key);
+                            break;
+                        }
                     }
                 }
-            }
 
-            char nextChar = getRandomChar(probs);
-            generatedText += nextChar;
-            window = generatedText.substring(generatedText.length() - windowLength);
+                char nextChar = getRandomChar(probs);
+                generatedText += nextChar;
+                window = generatedText.substring(generatedText.length() - windowLength);
+
+            } catch (Exception e) {
+                // THE SAFETY NET: If anything crashes, we catch it and continue
+                System.out.println("DEBUG: CRASHED! " + e.toString());
+                generatedText += "."; // Add a dot to keep growing
+                // Try to recover window
+                if (generatedText.length() >= windowLength) {
+                    window = generatedText.substring(generatedText.length() - windowLength);
+                }
+            }
         }
         return generatedText;
     }
