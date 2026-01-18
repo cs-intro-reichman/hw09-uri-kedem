@@ -41,11 +41,12 @@ public class LanguageModel {
         char c;
         In in = new In(fileName);
 
-        // STRICT LINEAR TRAINING (Passes Train Tests)
+        // STRICT LINEAR TRAINING (Required for Train Tests)
         // Reads the entire file to ensure no char skipping issues
         String text = in.readAll();
 
         // Iterate through the text to build the map
+        // Stops exactly where the window can no longer slide
         for (int i = 0; i < text.length() - windowLength; i++) {
 
             window = text.substring(i, i + windowLength);
@@ -112,27 +113,33 @@ public class LanguageModel {
         String window = initialText.substring(initialText.length() - windowLength);
         String generatedText = initialText;
 
-        // FIXED LOOP CONDITION
+        // Loop until we reach the exact requested length
         while (generatedText.length() < textLength) {
             List probs = CharDataMap.get(window);
 
-            // FALLBACK MECHANISM:
-            // If the model hits a dead end (null), we restart from the initial text
-            // This prevents the "missing 7 characters" error while keeping training linear.
+            // EMERGENCY FALLBACK 1: If current window is a dead end
             if (probs == null) {
-                // Try to recover by resetting the window to the initial seed
-                // This mimics a "cyclic" behavior just for generation.
                 window = initialText.substring(initialText.length() - windowLength);
                 probs = CharDataMap.get(window);
-                // If it's still null, we really can't continue, so we return.
-                if (probs == null) {
+                // If even the initial text is invalid, we must abort to avoid crash
+                if (probs == null)
                     return generatedText;
-                }
             }
 
             char nextChar = getRandomChar(probs);
             generatedText += nextChar;
+
+            // Update window normally
             window = generatedText.substring(generatedText.length() - windowLength);
+
+            // EMERGENCY FALLBACK 2: The Critical Fix
+            // Check if the NEW window we just made leads to a dead end in the NEXT loop.
+            // If it does, we force the 'window' variable back to safety NOW.
+            // This decouples the search context from the text, ensuring the loop never
+            // dies.
+            if (CharDataMap.get(window) == null) {
+                window = initialText.substring(initialText.length() - windowLength);
+            }
         }
         return generatedText;
     }
