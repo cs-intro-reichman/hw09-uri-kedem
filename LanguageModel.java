@@ -112,7 +112,6 @@ public class LanguageModel {
      * @return the generated text
      */
     public String generate(String initialText, int textLength) {
-        System.out.println("DEBUG: Code version 2.0 is running!");
         if (initialText.length() < windowLength) {
             return initialText;
         }
@@ -123,6 +122,7 @@ public class LanguageModel {
         while (generatedText.length() < textLength) {
             List probs = CharDataMap.get(window);
             if (probs == null) {
+                System.out.println("DEBUG: Probs is null for window: '" + window + "'");
                 return generatedText;
             }
             char nextChar = getRandomChar(probs);
