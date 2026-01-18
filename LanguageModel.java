@@ -39,26 +39,23 @@ public class LanguageModel {
 
     /** Builds a language model from the text in the given file (the corpus). */
     public void train(String fileName) {
-        String text = "";
+        String window = "";
+        char c;
         In in = new In(fileName);
-        // Read the whole file into a single string
-        if (!in.isEmpty()) {
-            text = in.readAll();
-        }
 
-        // Cyclic Training: Loop through the text
-        for (int i = 0; i < text.length(); i++) {
-            // 1. Get the current window
-            String window = "";
-            for (int j = 0; j < windowLength; j++) {
-                // Use modulo (%) to wrap around to the start if we go past the end
-                int charIndex = (i + j) % text.length();
-                window += text.charAt(charIndex);
-            }
+        // Read the entire file into one string
+        // This is safer than reading char-by-char for boundary cases
+        String text = in.readAll();
 
-            // 2. Get the next character (the target)
-            int nextCharIndex = (i + windowLength) % text.length();
-            char c = text.charAt(nextCharIndex);
+        // Iterate through the text, stopping when we can't form a full window + next
+        // char
+        for (int i = 0; i < text.length() - windowLength; i++) {
+
+            // 1. Get the current window (substring of length windowLength)
+            window = text.substring(i, i + windowLength);
+
+            // 2. Get the next character
+            c = text.charAt(i + windowLength);
 
             // 3. Update the map
             List probs = CharDataMap.get(window);
@@ -69,7 +66,6 @@ public class LanguageModel {
             probs.update(c);
         }
 
-        // Calculate probabilities for all lists
         for (List probs : CharDataMap.values()) {
             calculateProbabilities(probs);
         }
