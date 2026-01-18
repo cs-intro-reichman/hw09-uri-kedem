@@ -124,7 +124,6 @@ public class LanguageModel {
         while (generatedText.length() < textLength) {
             List probs = CharDataMap.get(window);
             if (probs == null) {
-                System.out.println("DEBUG: Probs is null for window: '" + window + "'");
                 return generatedText;
             }
             char nextChar = getRandomChar(probs);
