@@ -112,6 +112,7 @@ public class LanguageModel {
      * @return the generated text
      */
     public String generate(String initialText, int textLength) {
+        System.out.println("DEBUG: Code version 2.0 is running!");
         if (initialText.length() < windowLength) {
             return initialText;
         }
